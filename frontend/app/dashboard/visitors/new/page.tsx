@@ -46,17 +46,17 @@ export default function NewVisitorPage() {
     try {
       const response = await api.post('/access/qrcode', {
         visitorName: formData.visitorName,
-        visitorDocument: formData.visitorDocument,
-        visitorPhone: formData.visitorPhone || null,
-        entityId: formData.entityId || null,
-        expiresInHours: parseInt(formData.expiresInHours),
+        visitorDoc: formData.visitorDocument, // Backend usa visitorDoc
+        visitorPhone: formData.visitorPhone || undefined,
+        entityId: formData.entityId || undefined,
+        validHours: parseInt(formData.expiresInHours), // Backend usa validHours
       });
 
       // Redirecionar para a página de visualização do QR Code
       router.push(`/dashboard/visitors/${response.data.id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao gerar QR Code:', error);
-      alert('Erro ao gerar QR Code');
+      alert(error.response?.data?.message || 'Erro ao gerar QR Code');
     } finally {
       setSubmitting(false);
     }

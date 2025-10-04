@@ -4,12 +4,12 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Pencil, Trash2, Loader2 } from 'lucide-react';
 import type { User } from '@/types';
-import { format } from 'date-fns';
 
 const roleColors = {
   SUPERADMIN: 'bg-purple-500',
@@ -173,13 +173,13 @@ export default function UserDetailPage() {
             <div>
               <p className="text-sm text-muted-foreground">Data de Criação</p>
               <p className="font-medium">
-                {format(new Date(user.createdAt), 'dd/MM/yyyy HH:mm')}
+                {formatDate(user.createdAt)}
               </p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Última Atualização</p>
               <p className="font-medium">
-                {format(new Date(user.updatedAt), 'dd/MM/yyyy HH:mm')}
+                {formatDate(user.updatedAt)}
               </p>
             </div>
           </CardContent>

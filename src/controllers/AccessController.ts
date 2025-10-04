@@ -50,9 +50,27 @@ export class AccessController {
   }
 
   async validateQRCode(req: AuthRequest, res: Response) {
-    const { code } = req.params;
+    // Suporta tanto /validate/:code quanto POST /validate com body
+    const code = req.params.code || req.body.code;
+    
+    if (!code) {
+      return res.status(400).json({ message: 'Código do QR Code é obrigatório' });
+    }
+
     const qrCodeData = await accessService.validateVisitorQRCode(code);
-    return res.json(qrCodeData);
+    
+    // Se validação OK, registrar o acesso automaticamente
+    const user = req.user;
+    const accessLog = await accessService.useVisitorQRCode(code, user?.id!);
+    
+    return res.json({
+      message: 'QR Code válido! Acesso registrado com sucesso.',
+      visitor: {
+        visitorName: qrCodeData.visitorName,
+        visitorDocument: qrCodeData.visitorDoc,
+      },
+      accessLog,
+    });
   }
 
   async useQRCode(req: AuthRequest, res: Response) {
@@ -69,5 +87,28 @@ export class AccessController {
 
     const stats = await accessService.getStats(entityId);
     return res.json(stats);
+  }
+
+  // Listar todos os QR Codes
+  async findAllQRCodes(req: AuthRequest, res: Response) {
+    const user = req.user;
+    const entityId = user?.role === 'SUPERADMIN' ? undefined : user?.entityId;
+
+    const qrCodes = await accessService.findAllQRCodes(entityId);
+    return res.json(qrCodes);
+  }
+
+  // Buscar QR Code por ID
+  async findQRCodeById(req: AuthRequest, res: Response) {
+    const { id } = req.params;
+    const qrCode = await accessService.findQRCodeById(id);
+    return res.json(qrCode);
+  }
+
+  // Deletar QR Code
+  async deleteQRCode(req: AuthRequest, res: Response) {
+    const { id } = req.params;
+    await accessService.deleteQRCode(id);
+    return res.status(204).send();
   }
 }

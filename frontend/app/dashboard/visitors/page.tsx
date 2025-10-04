@@ -44,9 +44,14 @@ export default function VisitorsPage() {
   const fetchQRCodes = async () => {
     try {
       const response = await api.get('/access/qrcode');
+      console.log('QR Codes response:', response.data);
       setQrCodes(response.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao buscar QR Codes:', error);
+      if (error.response?.status === 404) {
+        // Se endpoint não existe, deixa array vazio
+        setQrCodes([]);
+      }
     } finally {
       setLoading(false);
     }

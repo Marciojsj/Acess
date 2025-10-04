@@ -23,17 +23,42 @@ router.post('/', permit('SUPERADMIN', 'ADMIN', 'OPERATOR'), (req, res) =>
   accessController.create(req, res)
 );
 
+// QR Code Routes
+
+// Listar QR Codes - ADMIN, SUPERADMIN
+router.get('/qrcode', permit('SUPERADMIN', 'ADMIN', 'OPERATOR'), (req, res) =>
+  accessController.findAllQRCodes(req, res)
+);
+
+// Buscar QR Code por ID - ADMIN, SUPERADMIN
+router.get('/qrcode/:id', permit('SUPERADMIN', 'ADMIN', 'OPERATOR'), (req, res) =>
+  accessController.findQRCodeById(req, res)
+);
+
 // Gerar QR Code para visitante - ADMIN, SUPERADMIN
+router.post('/qrcode', permit('SUPERADMIN', 'ADMIN'), (req, res) =>
+  accessController.generateVisitorQRCode(req, res)
+);
+
+// Deletar QR Code - ADMIN, SUPERADMIN
+router.delete('/qrcode/:id', permit('SUPERADMIN', 'ADMIN'), (req, res) =>
+  accessController.deleteQRCode(req, res)
+);
+
+// Validar QR Code (POST com body contendo code) - OPERATOR, ADMIN, SUPERADMIN
+router.post('/qrcode/validate', permit('SUPERADMIN', 'ADMIN', 'OPERATOR'), (req, res) =>
+  accessController.validateQRCode(req, res)
+);
+
+// Endpoints legados (manter compatibilidade)
 router.post('/qrcode/generate', permit('SUPERADMIN', 'ADMIN'), (req, res) =>
   accessController.generateVisitorQRCode(req, res)
 );
 
-// Validar QR Code - OPERATOR, ADMIN, SUPERADMIN
 router.get('/qrcode/validate/:code', permit('SUPERADMIN', 'ADMIN', 'OPERATOR'), (req, res) =>
   accessController.validateQRCode(req, res)
 );
 
-// Usar QR Code (registra entrada) - OPERATOR, ADMIN, SUPERADMIN
 router.post('/qrcode/use/:code', permit('SUPERADMIN', 'ADMIN', 'OPERATOR'), (req, res) =>
   accessController.useQRCode(req, res)
 );

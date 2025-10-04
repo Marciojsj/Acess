@@ -73,12 +73,13 @@ export default function AccessPage() {
     }
   };
 
-  const getUserName = (userId: string) => {
+  const getUserName = (userId?: string | null) => {
+    if (!userId) return 'Desconhecido';
     const user = users.find((u) => u.id === userId);
     return user?.name || 'Desconhecido';
   };
 
-  const getEntityName = (entityId: string | null) => {
+  const getEntityName = (entityId?: string | null) => {
     if (!entityId) return '-';
     const entity = entities.find((e) => e.id === entityId);
     return entity?.name || '-';

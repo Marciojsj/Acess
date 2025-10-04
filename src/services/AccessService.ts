@@ -158,9 +158,9 @@ export class AccessService {
       data: {
         code,
         visitorName,
-        visitorDoc,
-        visitorPhone,
-        entityId,
+        visitorDoc: visitorDoc || undefined,
+        visitorPhone: visitorPhone || undefined,
+        entityId: entityId || undefined,
         validUntil,
         createdBy,
       },
@@ -179,7 +179,12 @@ export class AccessService {
       id: qrCodeRecord.id,
       code: qrCodeRecord.code,
       visitorName: qrCodeRecord.visitorName,
-      validUntil: qrCodeRecord.validUntil,
+      visitorDocument: qrCodeRecord.visitorDoc,
+      visitorPhone: qrCodeRecord.visitorPhone,
+      entityId: qrCodeRecord.entityId,
+      expiresAt: qrCodeRecord.validUntil,
+      validUntil: qrCodeRecord.validUntil, // Manter compatibilidade
+      createdAt: qrCodeRecord.createdAt,
       qrCodeImage,
     };
   }
@@ -256,5 +261,83 @@ export class AccessService {
       exits,
       today: todayTotal,
     };
+  }
+
+  async findAllQRCodes(entityId?: string) {
+    const where = entityId ? { entityId } : {};
+
+    const qrCodes = await prisma.visitorQRCode.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Se houver entityId, buscar informações da entidade
+    const entityIds = [...new Set(qrCodes.map(qr => qr.entityId).filter(Boolean))];
+    const entities = entityIds.length > 0 
+      ? await prisma.entity.findMany({
+          where: { id: { in: entityIds as string[] } },
+          select: { id: true, name: true },
+        })
+      : [];
+
+    const entityMap = new Map(entities.map(e => [e.id, e]));
+
+    return qrCodes.map(qr => ({
+      id: qr.id,
+      visitorName: qr.visitorName,
+      visitorDocument: qr.visitorDoc,
+      visitorPhone: qr.visitorPhone,
+      code: qr.code,
+      expiresAt: qr.validUntil,
+      usedAt: qr.used ? qr.createdAt : null,
+      entityId: qr.entityId,
+      entity: qr.entityId ? entityMap.get(qr.entityId) : null,
+      createdAt: qr.createdAt,
+    }));
+  }
+
+  async findQRCodeById(id: string) {
+    const qrCode = await prisma.visitorQRCode.findUnique({
+      where: { id },
+    });
+
+    if (!qrCode) {
+      throw new AppError('QR Code não encontrado', 404);
+    }
+
+    // Buscar entidade se houver
+    const entity = qrCode.entityId
+      ? await prisma.entity.findUnique({
+          where: { id: qrCode.entityId },
+          select: { id: true, name: true },
+        })
+      : null;
+
+    return {
+      id: qrCode.id,
+      visitorName: qrCode.visitorName,
+      visitorDocument: qrCode.visitorDoc,
+      visitorPhone: qrCode.visitorPhone,
+      code: qrCode.code,
+      expiresAt: qrCode.validUntil,
+      usedAt: qrCode.used ? qrCode.createdAt : null,
+      entityId: qrCode.entityId,
+      entity,
+      createdAt: qrCode.createdAt,
+    };
+  }
+
+  async deleteQRCode(id: string) {
+    const qrCode = await prisma.visitorQRCode.findUnique({
+      where: { id },
+    });
+
+    if (!qrCode) {
+      throw new AppError('QR Code não encontrado', 404);
+    }
+
+    await prisma.visitorQRCode.delete({
+      where: { id },
+    });
   }
 }
