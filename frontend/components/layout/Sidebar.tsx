@@ -25,30 +25,30 @@ const menuItems = [
   },
   {
     title: 'Usuários',
-    href: '/users',
+    href: '/dashboard/users',
     icon: Users,
     roles: ['SUPERADMIN', 'ADMIN'],
   },
   {
     title: 'Entidades',
-    href: '/entities',
+    href: '/dashboard/entities',
     icon: Building2,
     roles: ['SUPERADMIN', 'ADMIN'],
   },
   {
     title: 'Controle de Acesso',
-    href: '/access',
+    href: '/dashboard/access',
     icon: DoorOpen,
   },
   {
     title: 'Visitantes (QR Code)',
-    href: '/visitors',
+    href: '/dashboard/visitors',
     icon: QrCode,
     roles: ['SUPERADMIN', 'ADMIN', 'OPERATOR'],
   },
   {
     title: 'Configurações',
-    href: '/config',
+    href: '/dashboard/config',
     icon: Settings,
   },
 ];
