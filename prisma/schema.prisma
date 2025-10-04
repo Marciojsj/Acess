@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  OPERATOR
+  USER
+  VISITOR
+}
+
+enum EntityType {
+  SCHOOL
+  CONDOMINIUM
+  COMPANY
+  EVENT
+}
+
+enum AccessType {
+  ENTRY
+  EXIT
+}
+
+enum AccessStatus {
+  AUTHORIZED
+  DENIED
+  PENDING
+}
+
+model User {
+  id            String        @id @default(uuid())
+  name          String
+  email         String        @unique
+  password      String
+  role          Role          @default(USER)
+  entityId      String?
+  entity        Entity?       @relation(fields: [entityId], references: [id])
+  isActive      Boolean       @default(true)
+  phone         String?
+  document      String?       @unique
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  accessLogs    AccessLog[]
+  operatedLogs  AccessLog[]   @relation("OperatorLogs")
+  refreshTokens RefreshToken[]
+
+  @@index([email])
+  @@index([entityId])
+  @@map("users")
+}
+
+model Entity {
+  id          String      @id @default(uuid())
+  name        String
+  type        EntityType
+  address     String?
+  phone       String?
+  email       String?
+  isActive    Boolean     @default(true)
+  maxUsers    Int         @default(100)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  users       User[]
+  accessLogs  AccessLog[]
+
+  @@map("entities")
+}
+
+model AccessLog {
+  id          String       @id @default(uuid())
+  userId      String?
+  user        User?        @relation(fields: [userId], references: [id])
+  entityId    String?
+  entity      Entity?      @relation(fields: [entityId], references: [id])
+  visitorName String?
+  visitorDoc  String?
+  visitorPhone String?
+  type        AccessType
+  status      AccessStatus @default(AUTHORIZED)
+  method      String?      @default("MANUAL") // MANUAL, QR_CODE, CARD, BIOMETRIC
+  notes       String?
+  operatorId  String?
+  operator    User?        @relation("OperatorLogs", fields: [operatorId], references: [id])
+  timestamp   DateTime     @default(now())
+  qrCode      String?
+
+  @@index([userId])
+  @@index([entityId])
+  @@index([timestamp])
+  @@map("access_logs")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+  @@map("refresh_tokens")
+}
+
+model VisitorQRCode {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  visitorName String
+  visitorDoc  String?
+  visitorPhone String?
+  entityId    String?
+  validUntil  DateTime
+  used        Boolean  @default(false)
+  createdBy   String
+  createdAt   DateTime @default(now())
+
+  @@index([code])
+  @@index([validUntil])
+  @@map("visitor_qrcodes")
+}
