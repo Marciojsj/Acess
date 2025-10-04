@@ -15,18 +15,21 @@ describe('Auth Endpoints', () => {
 
   describe('POST /api/auth/register', () => {
     it('should register a new user', async () => {
+      // Gerar email único para cada teste
+      const uniqueEmail = `test${Date.now()}@example.com`;
+      
       const response = await request(app)
         .post('/api/auth/register')
         .send({
           name: 'Test User',
-          email: 'test@example.com',
+          email: uniqueEmail,
           password: 'password123',
           role: 'USER',
         });
 
       expect(response.status).toBe(201);
       expect(response.body).toHaveProperty('id');
-      expect(response.body.email).toBe('test@example.com');
+      expect(response.body.email).toBe(uniqueEmail);
     });
 
     it('should fail with invalid email', async () => {
