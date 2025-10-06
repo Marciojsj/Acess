@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { useToast } from '@/components/ui/toast';
+import { DeleteDialog } from '@/components/ui/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -22,6 +24,13 @@ export default function UsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; userId: string | null; userName: string }>({
+    open: false,
+    userId: null,
+    userName: '',
+  });
+  const [deleting, setDeleting] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => {
     fetchUsers();
@@ -33,19 +42,33 @@ export default function UsersPage() {
       setUsers(response.data);
     } catch (err: any) {
       setError(err.response?.data?.message || 'Erro ao carregar usuários');
+      showToast(err.response?.data?.message || 'Erro ao carregar usuários', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
+  const handleDeleteClick = (user: User) => {
+    setDeleteDialog({
+      open: true,
+      userId: user.id,
+      userName: user.name,
+    });
+  };
 
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.userId) return;
+
+    setDeleting(true);
     try {
-      await api.delete(`/users/${id}`);
-      setUsers(users.filter(u => u.id !== id));
+      await api.delete(`/users/${deleteDialog.userId}`);
+      setUsers(users.filter(u => u.id !== deleteDialog.userId));
+      showToast('Usuário excluído com sucesso!', 'success');
+      setDeleteDialog({ open: false, userId: null, userName: '' });
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Erro ao excluir usuário');
+      showToast(err.response?.data?.message || 'Erro ao excluir usuário', 'error');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -132,7 +155,7 @@ export default function UsersPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(user.id)}
+                        onClick={() => handleDeleteClick(user)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -151,6 +174,16 @@ export default function UsersPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Delete Dialog */}
+      <DeleteDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => !deleting && setDeleteDialog({ open, userId: null, userName: '' })}
+        onConfirm={handleDeleteConfirm}
+        title="Excluir Usuário"
+        description={`Tem certeza que deseja excluir o usuário "${deleteDialog.userName}"? Esta ação não pode ser desfeita.`}
+        loading={deleting}
+      />
     </div>
   );
 }

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { useToast } from '@/components/ui/toast';
+import { DeleteDialog } from '@/components/ui/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -25,9 +27,16 @@ const entityTypeLabels = {
 };
 
 export default function EntitiesPage() {
+  const { showToast } = useToast();
   const [entities, setEntities] = useState<Entity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; entityId: string | null; entityName: string; deleting: boolean }>({
+    open: false,
+    entityId: null,
+    entityName: '',
+    deleting: false,
+  });
 
   useEffect(() => {
     fetchEntities();
@@ -44,14 +53,23 @@ export default function EntitiesPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta entidade?')) return;
+  const handleDeleteClick = (entity: Entity) => {
+    setDeleteDialog({ open: true, entityId: entity.id, entityName: entity.name, deleting: false });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.entityId) return;
+
+    setDeleteDialog({ ...deleteDialog, deleting: true });
 
     try {
-      await api.delete(`/entities/${id}`);
-      setEntities(entities.filter(e => e.id !== id));
+      await api.delete(`/entities/${deleteDialog.entityId}`);
+      setEntities(entities.filter(e => e.id !== deleteDialog.entityId));
+      showToast('Entidade excluída com sucesso!', 'success');
+      setDeleteDialog({ open: false, entityId: null, entityName: '', deleting: false });
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Erro ao excluir entidade');
+      showToast(err.response?.data?.message || 'Erro ao excluir entidade', 'error');
+      setDeleteDialog({ ...deleteDialog, deleting: false });
     }
   };
 
@@ -141,7 +159,7 @@ export default function EntitiesPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(entity.id)}
+                        onClick={() => handleDeleteClick(entity)}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -160,6 +178,15 @@ export default function EntitiesPage() {
           )}
         </CardContent>
       </Card>
+
+      <DeleteDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, entityId: null, entityName: '', deleting: false })}
+        onConfirm={handleDeleteConfirm}
+        loading={deleteDialog.deleting}
+        title="Excluir Entidade"
+        description={`Tem certeza que deseja excluir a entidade "${deleteDialog.entityName}"? Esta ação não pode ser desfeita.`}
+      />
     </div>
   );
 }

@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, QrCode as QrCodeIcon, Scan, Calendar, Trash2 } from 'lucide-react';
+import { useToast } from '@/components/ui/toast';
+import { DeleteDialog } from '@/components/ui/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,8 +36,15 @@ interface VisitorQRCode {
 
 export default function VisitorsPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [qrCodes, setQrCodes] = useState<VisitorQRCode[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; qrCodeId: string | null; visitorName: string; deleting: boolean }>({
+    open: false,
+    qrCodeId: null,
+    visitorName: '',
+    deleting: false,
+  });
 
   useEffect(() => {
     fetchQRCodes();
@@ -57,15 +66,24 @@ export default function VisitorsPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir este QR Code?')) return;
+  const handleDeleteClick = (qrCode: VisitorQRCode) => {
+    setDeleteDialog({ open: true, qrCodeId: qrCode.id, visitorName: qrCode.visitorName, deleting: false });
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteDialog.qrCodeId) return;
+
+    setDeleteDialog({ ...deleteDialog, deleting: true });
 
     try {
-      await api.delete(`/access/qrcode/${id}`);
-      fetchQRCodes();
+      await api.delete(`/access/qrcode/${deleteDialog.qrCodeId}`);
+      setQrCodes(qrCodes.filter(q => q.id !== deleteDialog.qrCodeId));
+      showToast('QR Code excluído com sucesso!', 'success');
+      setDeleteDialog({ open: false, qrCodeId: null, visitorName: '', deleting: false });
     } catch (error) {
       console.error('Erro ao excluir QR Code:', error);
-      alert('Erro ao excluir QR Code');
+      showToast('Erro ao excluir QR Code', 'error');
+      setDeleteDialog({ ...deleteDialog, deleting: false });
     }
   };
 
@@ -222,7 +240,7 @@ export default function VisitorsPage() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(qrCode.id)}
+                          onClick={() => handleDeleteClick(qrCode)}
                         >
                           <Trash2 className="w-4 h-4 text-red-600" />
                         </Button>
@@ -235,6 +253,15 @@ export default function VisitorsPage() {
           </Table>
         </CardContent>
       </Card>
+
+      <DeleteDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, qrCodeId: null, visitorName: '', deleting: false })}
+        onConfirm={handleDeleteConfirm}
+        loading={deleteDialog.deleting}
+        title="Excluir QR Code"
+        description={`Tem certeza que deseja excluir o QR Code de "${deleteDialog.visitorName}"? Esta ação não pode ser desfeita.`}
+      />
     </div>
   );
 }

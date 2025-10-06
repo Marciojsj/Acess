@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Pencil, Trash2, Building2, Mail, Phone, MapPin, Users, Calendar } from 'lucide-react';
+import { useToast } from '@/components/ui/toast';
+import { DeleteDialog } from '@/components/ui/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,8 +28,10 @@ const entityTypeColors: Record<string, string> = {
 export default function EntityDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { showToast } = useToast();
   const [entity, setEntity] = useState<Entity | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, deleting: false });
 
   useEffect(() => {
     fetchEntity();
@@ -44,15 +48,21 @@ export default function EntityDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Tem certeza que deseja excluir esta entidade?')) return;
+  const handleDeleteClick = () => {
+    setDeleteDialog({ open: true, deleting: false });
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleteDialog({ open: true, deleting: true });
 
     try {
       await api.delete(`/entities/${params.id}`);
+      showToast('Entidade excluída com sucesso!', 'success');
       router.push('/dashboard/entities');
     } catch (error) {
       console.error('Erro ao excluir entidade:', error);
-      alert('Erro ao excluir entidade');
+      showToast('Erro ao excluir entidade', 'error');
+      setDeleteDialog({ open: false, deleting: false });
     }
   };
 
@@ -88,7 +98,7 @@ export default function EntityDetailPage() {
             <Pencil className="w-4 h-4 mr-2" />
             Editar
           </Button>
-          <Button variant="destructive" onClick={handleDelete}>
+          <Button variant="destructive" onClick={handleDeleteClick}>
             <Trash2 className="w-4 h-4 mr-2" />
             Excluir
           </Button>
@@ -195,6 +205,15 @@ export default function EntityDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <DeleteDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, deleting: false })}
+        onConfirm={handleDeleteConfirm}
+        loading={deleteDialog.deleting}
+        title="Excluir Entidade"
+        description={`Tem certeza que deseja excluir a entidade "${entity?.name}"? Esta ação não pode ser desfeita.`}
+      />
     </div>
   );
 }

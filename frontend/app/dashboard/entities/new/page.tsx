@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,6 +16,7 @@ import type { EntityType } from '@/types';
 
 export default function NewEntityPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   
@@ -34,9 +36,12 @@ export default function NewEntityPage() {
 
     try {
       await api.post('/entities', formData);
+      showToast('Entidade criada com sucesso!', 'success');
       router.push('/dashboard/entities');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao criar entidade');
+      const errorMsg = err.response?.data?.message || 'Erro ao criar entidade';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
     } finally {
       setLoading(false);
     }

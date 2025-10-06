@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
 import { formatDate } from '@/lib/utils';
+import { useToast } from '@/components/ui/toast';
+import { DeleteDialog } from '@/components/ui/delete-dialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,9 +24,11 @@ const roleColors = {
 export default function UserDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { showToast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, deleting: false });
 
   useEffect(() => {
     if (params.id) {
@@ -43,14 +47,20 @@ export default function UserDetailPage() {
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Tem certeza que deseja excluir este usuário?')) return;
+  const handleDeleteClick = () => {
+    setDeleteDialog({ open: true, deleting: false });
+  };
+
+  const handleDeleteConfirm = async () => {
+    setDeleteDialog({ open: true, deleting: true });
 
     try {
       await api.delete(`/users/${params.id}`);
+      showToast('Usuário excluído com sucesso!', 'success');
       router.push('/dashboard/users');
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Erro ao excluir usuário');
+      showToast(err.response?.data?.message || 'Erro ao excluir usuário', 'error');
+      setDeleteDialog({ open: false, deleting: false });
     }
   };
 
@@ -104,7 +114,7 @@ export default function UserDetailPage() {
           </Link>
           <Button
             variant="destructive"
-            onClick={handleDelete}
+            onClick={handleDeleteClick}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Excluir
@@ -185,6 +195,15 @@ export default function UserDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      <DeleteDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog({ open, deleting: false })}
+        onConfirm={handleDeleteConfirm}
+        loading={deleteDialog.deleting}
+        title="Excluir Usuário"
+        description={`Tem certeza que deseja excluir o usuário "${user?.name}"? Esta ação não pode ser desfeita.`}
+      />
     </div>
   );
 }

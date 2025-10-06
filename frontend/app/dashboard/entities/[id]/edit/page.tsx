@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Building2 } from 'lucide-react';
+import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ const entityTypeOptions = [
 export default function EditEntityPage() {
   const params = useParams();
   const router = useRouter();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -51,7 +53,7 @@ export default function EditEntityPage() {
       });
     } catch (error) {
       console.error('Erro ao buscar entidade:', error);
-      alert('Erro ao carregar entidade');
+      showToast('Erro ao carregar entidade', 'error');
     } finally {
       setLoading(false);
     }
@@ -63,10 +65,11 @@ export default function EditEntityPage() {
 
     try {
       await api.put(`/entities/${params.id}`, formData);
+      showToast('Entidade atualizada com sucesso!', 'success');
       router.push(`/dashboard/entities/${params.id}`);
     } catch (error) {
       console.error('Erro ao atualizar entidade:', error);
-      alert('Erro ao atualizar entidade');
+      showToast('Erro ao atualizar entidade', 'error');
     } finally {
       setSubmitting(false);
     }

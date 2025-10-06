@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import api from '@/lib/api';
+import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +15,7 @@ import type { Entity, Role } from '@/types';
 
 export default function NewUserPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [entities, setEntities] = useState<Entity[]>([]);
   const [error, setError] = useState('');
@@ -38,6 +40,7 @@ export default function NewUserPage() {
       setEntities(response.data);
     } catch (err) {
       console.error('Erro ao carregar entidades:', err);
+      showToast('Erro ao carregar entidades', 'error');
     }
   };
 
@@ -51,9 +54,12 @@ export default function NewUserPage() {
         ...formData,
         entityId: formData.entityId || undefined,
       });
+      showToast('Usuário criado com sucesso!', 'success');
       router.push('/dashboard/users');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Erro ao criar usuário');
+      const errorMsg = err.response?.data?.message || 'Erro ao criar usuário';
+      setError(errorMsg);
+      showToast(errorMsg, 'error');
     } finally {
       setLoading(false);
     }

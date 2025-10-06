@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, User } from 'lucide-react';
+import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,6 +23,7 @@ const roleOptions = [
 export default function EditUserPage() {
   const params = useParams();
   const router = useRouter();
+  const { showToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [entities, setEntities] = useState<Entity[]>([]);
@@ -60,7 +62,7 @@ export default function EditUserPage() {
       setEntities(entitiesResponse.data);
     } catch (error) {
       console.error('Erro ao buscar dados:', error);
-      alert('Erro ao carregar dados');
+      showToast('Erro ao carregar dados', 'error');
     } finally {
       setLoading(false);
     }
@@ -78,10 +80,11 @@ export default function EditUserPage() {
       }
 
       await api.put(`/users/${params.id}`, updateData);
+      showToast('Usuário atualizado com sucesso!', 'success');
       router.push(`/dashboard/users/${params.id}`);
     } catch (error) {
       console.error('Erro ao atualizar usuário:', error);
-      alert('Erro ao atualizar usuário');
+      showToast('Erro ao atualizar usuário', 'error');
     } finally {
       setSubmitting(false);
     }

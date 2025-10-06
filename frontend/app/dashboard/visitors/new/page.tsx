@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, QrCode as QrCodeIcon } from 'lucide-react';
+import { useToast } from '@/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import type { Entity } from '@/types';
 
 export default function NewVisitorPage() {
   const router = useRouter();
+  const { showToast } = useToast();
   const [entities, setEntities] = useState<Entity[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -53,10 +55,11 @@ export default function NewVisitorPage() {
       });
 
       // Redirecionar para a página de visualização do QR Code
+      showToast('QR Code gerado com sucesso!', 'success');
       router.push(`/dashboard/visitors/${response.data.id}`);
     } catch (error: any) {
       console.error('Erro ao gerar QR Code:', error);
-      alert(error.response?.data?.message || 'Erro ao gerar QR Code');
+      showToast(error.response?.data?.message || 'Erro ao gerar QR Code', 'error');
     } finally {
       setSubmitting(false);
     }
